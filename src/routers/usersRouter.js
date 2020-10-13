@@ -49,12 +49,22 @@ router.get("/users/get-all", async (req, res) => {
 });
 
 router.patch("/users/edit", async (req, res) => {
+	const allowdUpdates = ["name", "age", "email", "password"];
+	for (let update in req.body) {
+		if (!allowdUpdates.includes(update)) {
+			return res.status(400).send({
+				status: 400,
+				message: "Invalid update: " + update,
+			});
+		}
+	}
+
 	const _id = req.query.id;
 
 	try {
 		const user = await User.findByIdAndUpdate(_id, req.body, {
-			new: true,
-			runValidators: true,
+			new: true, // return new document
+			runValidators: true, // להריץ ולידטורים של הסכימה
 		});
 
 		if (!user) {
@@ -73,6 +83,55 @@ router.patch("/users/edit", async (req, res) => {
 	}
 });
 
-// תרגיל - צרו קוד שמוודא שבתוך גוף הבקשה יש רק שדות מותרים לעדכון
+router.delete("/users/delete", async (req, res) => {
+	const _id = req.query.id;
+	try {
+		const user = await User.findByIdAndDelete(_id);
+
+		if (!user) {
+			return res.status(404).send({
+				status: 404,
+				message: "wrong id",
+			});
+		}
+
+		res.send(user);
+	} catch (err) {
+		res.status(500).send(err);
+	}
+});
+
+router.get("/users/search", async (req, res) => {
+	const allowedSearch = ["name", "age", "email", "password"];
+	for (let search in req.body) {
+		if (!allowedSearch.includes(search)) {
+			return res.status(400).send({
+				status: 400,
+				message: "Invalid search: " + search,
+			});
+		}
+	}
+
+	try {
+		const users = await User.find(req.body);
+
+		res.send(users);
+	} catch (err) {
+		res.status(500).send(err);
+	}
+});
+
+// צרו בגשת גט של חיפוש - הבקשה מקבלת בתוך גוף הבקשה את שדות החיפוש ומחזירה דוקמנטים שמתאימים לשדות
+// יש לוודא שהשדות מתאימים למודל.
 
 module.exports = router;
+
+// צרו פרויקט חדש של שרת אתר קניות של מחשבים ניידים
+// לכל מחשב יש: יצרן, מעבד, זכרון פנימי, גודל מסך, מחיר
+// תעשו ולדיציה למה שנדרש בסכימה
+// צרו ראוטים של
+// יצירת דוקמנט למחשב חדש
+// קבלת מחשב על פי איידי
+// מחיקת מחשב
+// עריכת פרטי מחשב
+// חיפוש מחשב על פי שדות חיפוש כאשר במחיר יהיה אפשר לציין טווח מחירים
